@@ -1,131 +1,62 @@
-import sys, math, cmath, json
-import numpy as np, pygame as pg
-#from pygame.locals import *
-from scipy.spatial import Delaunay
-import matplotlib.pyplot as plt
+# Only initialize once.
+import math
+if __name__ == '__main__':
+  import sys, cmath, json
+  import numpy as np, pygame as pg
+  #from pygame.locals import *
+  from scipy.spatial import Delaunay
+  import matplotlib.pyplot as plt
+  from Components.Win import *
+  from Components.Universe import *
+  from Components.Star import *
+  from Components.Race import *
+  from Components.Fleet import *
+  from Components.Ship import *
 
-#constants
-# Screen size
-WINSIZE = [1600, 1600]
-# Center of screen
-WINCENTER = [800, 800]
-#mpath = r'C:\Users\User\Documents\KN\Dos\Stars!\Games\Hgserati\Hgserati.map'
-#mpath = r'C:\Users\User\Documents\KN\Dos\Stars!\Games\testbed\testbed.map'
-#mpath = r'\\ZYKRONOS\Stars!\GAMES\AC4RAND.MAP'
-mpath = r'C:\Users\Nihil\OneDrive\Dos\Stars!\Games\AC1\AC1.map'
-ppath = r'C:\Users\Nihil\OneDrive\Dos\Stars!\Games\AC1\AC1.p2'
-clrs = {
-  "habg":(0,255,0),
-  "habgb":(0,130,0),
-  "haby":(255,255,0),
-  "habyb":(130,130,0),
-  "habr":(255,0,0),
-  "habrb":(130,0,0),
-  "scany":(130,130,0),
-  "scanr":(130,0,0),
-  "Nanite":(255,255,0),
-  "Hiserat":(255,0,0),
-  "Hawk":(0,255,0),
-  "House Cat":(0,0,255),
-  "Valadiac":(255,255,0),
-  "Crusher":(255,0,255),
-  "Rush'n":(0,255,255),
-  "Golem":(130,0,0)
-  }
+  #constants
+  gamename = "AC2"
+  #mpath = r'C:\Users\User\Documents\KN\Dos\Stars!\Games\Hgserati\Hgserati.map'
+  #mpath = r'C:\Users\User\Documents\KN\Dos\Stars!\Games\testbed\testbed.map'
+  #mpath = r'\\ZYKRONOS\Stars!\GAMES\AC4RAND.MAP'
+  mpath = rf'C:\Users\Nihil\OneDrive\Dos\Stars!\Games\{gamename}\{gamename}.map'
+  ppath = rf'C:\Users\Nihil\OneDrive\Dos\Stars!\Games\{gamename}\{gamename}.p2'
+  clrs = {
+    "habg":(0,255,0),
+    "habgb":(0,130,0),
+    "haby":(255,255,0),
+    "habyb":(130,130,0),
+    "habr":(255,0,0),
+    "habrb":(130,0,0),
+    "scany":(130,130,0),
+    "scanr":(130,0,0),
+    "Nanites":(255,255,000), # Player 1
+    "Hiserati":(255,000,000),   # Player 2
+    "player3":(000,255,000),   # Player 3
+    "player4":(000,000,255),
+    "player5":(255,255,000),
+    "player6":(255,000,255),
+    "player7":(000,255,255),
+    "player8":(130,000,000)
+    }
 
-# Main database
-dat = []
-# Min and max star coordinates
-minx, maxx, miny, maxy = 10000, 0, 10000, 0
-# Screen to space scale, min and max as points, range of coordinates
-skl, minxy, maxxy, fxy = 1.0, (1,1), (1,1), (1,1)
-# Inputs: Mouse position
-mpos = (WINCENTER[0], WINCENTER[1])
-safegates = []
-unsafegates = []
-bestgates = []
+  safegates = []
+  unsafegates = []
+  bestgates = []
+
+  # Homeworld
+  hw:Star = None
+  sel:Star = None
+
+  clrs16 = [(0,0,0),(0,0,128),(0,128,0),(0,128,128),
+  (128,0,0),(128,0,128),(128,128,0),(170,170,170),
+  (85,85,85),(0,0,255),(0,255,0),(0,255,255),
+  (255,0,0),(255,0,255),(255,255,0),(255,255,255)]
+
 
 def space2screen(x, y):
     return math.floor(skl * (x - minx)),  WINSIZE[1] - math.floor(skl * (y - miny))
 def screen2space(sx, sy):
     return math.floor(sx / skl + minx),  math.floor((WINSIZE[1] - sy) / skl + miny)
-
-class Star:
-  #i, x, y, n = 0, 0, 0, ""
-  #sx, sy, xy = 0.0, 0.0, 0+0j
-  #owner, starbase, reportage, pop, value = "", "", 0, 0, 0.0
-  def __init__(self, n):
-    # ID, Space X, Space Y, Name
-    self.i:int = n[0]
-    self.x:int = n[1]
-    self.y:int = n[2]
-    self.n:str = n[3]
-  def screen(self):
-    # Screen X, Screen Y, Screen point as complex
-    s2s = space2screen(self.x, self.y)
-    self.sx:int = s2s[0]
-    self.sy:int = s2s[1]
-    self.xy:complex = (complex(self.sx, self.sy))
-  def pla(self, n):
-    if self.n != n[0]: return
-    self.owner     :str = n[1]
-    self.starbase  :str = n[2]
-    self.reportage :int = n[3]
-    self.pop       :int = n[4]
-    if n[5] == "":
-      print("Error! No value for", self.n)
-    else:
-      self.value     :float = (float)(n[5][:-1])/100.0
-    self.production :str = n[6]
-    self.mines :int = n[7]
-    self.factories:int = n[8]
-    self.defperc:float = 0.0 if n[9] == "" else (float)(n[9][:-1])/100.0
-    self.siron:int = n[10]
-    self.sbora:int = n[11]
-    self.sgerm:int = n[12]
-    self.ironmr:int = n[13]
-    self.boramr:int = n[14]
-    self.germmr:int = n[15]
-    self.ironmc:int = n[16]
-    self.boramc:int = n[17]
-    self.germmc:int = n[18]
-    self.res:int = n[19]
-    self.grav:str = n[20]
-    self.temp:str = n[21]
-    self.rad:str = n[22]
-    self.gravo:str = n[23]
-    self.tempo:str = n[24]
-    self.rado:str = n[25]
-    self.terra:float = 0.0 if n[26] == "" else (float)(n[26][:-1])/100.0
-    if len(n) == 27: return
-    self.cap:int = n[27]
-    self.scan:int = n[28]
-    self.pen:int = n[29]
-    self.driver:int = n[30]
-    self.warp:int = n[31]
-    self.route:int = n[32]
-    self.gaterange:int = (int)(n[33])
-    self.gatemass:int = n[34]
-    self.pctdmg:int = n[35]
-
-    #self.safegates:Star = []
-    #self.unsafegates:Star = []
-    self.numsafegates:int = 0
-    self.numunsafegates:int = 0
-    self.rangefromhw:float = 0.0
-    self.head:Star = None
-    self.rangefromhead:float = 0.0
-
-
-
-
-  def __str__(self):
-    return (f'#{self.i}, {self.x}, {self.y}, {self.n}; {self.sx}, {self.sy}, {self.xy}')
-  def dbugpla(self):
-    print(f'#{self.i}, {self.n}; {self.owner}, {self.starbase}, {self.reportage}, {self.pop}, {self.value}')
-# Homeworld
-hw:Star = None
-sel:Star = None
 
 def loadmap(hwname):
   global dat, hw
@@ -158,7 +89,7 @@ def loadmap(hwname):
   miny = 1000
   skl = min(WINSIZE[0] / (maxx - minx), WINSIZE[1] / (maxy - miny))
   for p in dat:
-    p.screen()
+    p.screen(space2screen(p.x, p.y))
   for v in range(5):
     print(dat[v])
   print(hw)
@@ -183,11 +114,11 @@ def loadpfile():
         dat[i].pla(p)
     
     #My planets
-    race = hw.owner
+    race = hw.ownerstr
     myplanets = []
     for x in dat:
       try:
-        if x.owner != race: continue
+        if x.ownerstr != race: continue
       except AttributeError:
         continue
       d = math.sqrt((x.x-hw.x)**2 + (x.y-hw.y)**2)
@@ -255,7 +186,7 @@ def draw_stars(screen, mode):
       #color = (255,0,255)
     if v > 0:
       try:
-        c, r = clrs[p.owner], v * 20
+        c, r = clrs[p.ownerstr], v * 20
         pg.draw.circle(screen, c, (p.sx, p.sy), r)
       except KeyError:
         pass
@@ -266,7 +197,7 @@ def draw_stars(screen, mode):
     elif v < 0:
       if t > 0:
         try:
-          c, r = clrs[p.owner], t * 20
+          c, r = clrs[p.ownerstr], t * 20
           pg.draw.circle(screen, c, (p.sx, p.sy), r)
         except KeyError:
           pass
@@ -276,7 +207,7 @@ def draw_stars(screen, mode):
         pg.draw.circle(screen, c, (p.sx, p.sy), r)
       else:
         try:
-          c, r = clrs[p.owner], v/-0.45 * 20
+          c, r = clrs[p.ownerstr], v/-0.45 * 20
           pg.draw.circle(screen, c, (p.sx, p.sy), r)
         except KeyError:
           pass
@@ -291,10 +222,6 @@ def draw_stars(screen, mode):
           #val = 
           screen.set_at(pos, (0,255,0) if p.n == hw.n else color)
 
-clrs16 = [(0,0,0),(0,0,128),(0,128,0),(0,128,128),
-  (128,0,0),(128,0,128),(128,128,0),(170,170,170),
-  (85,85,85),(0,0,255),(0,255,0),(0,255,255),
-  (255,0,0),(255,0,255),(255,255,0),(255,255,255)]
 def divide_stars(screen, n):
   print("Dividing stars at ", hw)
   color = clrs16[12]
@@ -357,23 +284,16 @@ def findnearest(pos):
   return dat[mini]
 
 def draw_heartbeats(screen):
-  v = searchmap("Dowding")
+  # v = searchmap("Autumn Leaves")
+  # p = dat[v]
+  # pg.draw.circle(screen, (128,0,0), (p.sx, p.sy), 312/300*250*skl, 5)
+  # pg.draw.circle(screen, (128,128,0), (p.sx, p.sy), 312*skl, 5)
+  # pg.draw.circle(screen, (128,0,0), (hw.sx, hw.sy), 312/300*250*skl, 5)
+  # pg.draw.circle(screen, (128,128,0), (hw.sx, hw.sy), 312*skl, 5)
+  # pg.draw.circle(screen, (128,64,0), (hw.sx, hw.sy), 312/300*800*skl, 5)
+  v = searchmap("Tongue")
   p = dat[v]
-  pg.draw.circle(screen, (64,0,0), (p.sx, p.sy), 312*skl)
-  v = searchmap("Spittle")
-  p = dat[v]
-  pg.draw.circle(screen, (64,0,0), (p.sx, p.sy), 312*skl)
-  v = searchmap("Tsagigla'lal")
-  p = dat[v]
-  pg.draw.circle(screen, (64,0,0), (p.sx, p.sy), 312*skl)
-  v = searchmap("Nirvana")
-  p = dat[v]
-  pg.draw.circle(screen, (128,0,0), (p.sx, p.sy), 312*skl)
-  pg.draw.circle(screen, (128,128,0), (hw.sx, hw.sy), 312*skl)
-  pg.draw.circle(screen, (128,64,0), (hw.sx, hw.sy), 312/300*800*skl, 5)
-  v = searchmap("Trog")
-  p = dat[v]
-  pg.draw.circle(screen, (130,0,255), (p.sx, p.sy), 600*skl, 5)
+  pg.draw.circle(screen, (130,0,255), (p.sx, p.sy), 312/300*250*skl, 5)
 
 
 def draw_gates(screen):
@@ -384,9 +304,14 @@ def draw_gates(screen):
     #if g[1].head is not None: continue
     color = (130, 255, 0) if g[0].gaterange > 0 and g[1].gaterange > 0 else (130, 255, 130)
     pg.draw.line(screen, color, (g[0].sx, g[0].sy), (g[1].sx, g[1].sy))
+    #pg.draw.circle(screen, (130, 255, 0), (g[1].sx, g[1].sy), 312/300*g[1].gaterange*skl, 5)
   for g in bestgates:
     color = (0, 0, 255) if g[0].gaterange > 0 and g[1].gaterange > 0 else (130, 130, 255)
     #pg.draw.line(screen, color, (g[0].sx, g[0].sy), (g[1].sx, g[1].sy))
+  for p in dat:
+    if p.n in ["Halsey", "Autumn Leaves", "Pickles", "Ball Bearing", "Buttercup", "Heart", "Juniper"]:
+      for c, r in zip(((128,0,0), (128,128,0), (128,128,255)), (250, 300, 800)):
+        pg.draw.circle(screen, c, (p.sx, p.sy), 312/300*r *skl, 5)
 
 
 
@@ -395,7 +320,7 @@ def draw_screen(screen):
   screen.fill(black)
   draw_heartbeats(screen)
   draw_gates(screen)
-  draw_stars(screen, 4)
+  draw_stars(screen, mode)
   pg.draw.line(screen, (255,0,0), (hw.sx, hw.sy), mpos)
   if sel:
     pg.draw.line(screen, (130,0,130), (sel.sx, sel.sy), mpos)
@@ -408,7 +333,7 @@ def main():
   "This is the starfield code"
   "Lifted from pygame.examples.stars"
   #create our starfield
-  loadmap("Klaupaucius")
+  loadmap("Halsey")
   loadpfile()
   clock = pg.time.Clock()
   #initialize and prepare screen
@@ -418,13 +343,18 @@ def main():
 
   #main game loop
   done = 0
-  global mpos
+  global mpos, mode
   print("Game loop begins")
   while not done:
     for e in pg.event.get():
       if e.type == pg.QUIT or (e.type == pg.KEYUP and e.key == pg.K_ESCAPE):
         done = 1
         break
+      elif e.type == pg.KEYDOWN:
+        if e.key == pg.K_4:
+          mode = 4
+        elif e.key == pg.K_5:
+          mode = 5
       elif e.type == pg.MOUSEMOTION:
           if 0 < e.pos[0] < WINSIZE[0] and 0 < e.pos[1] < WINSIZE[1]:
               mpos = e.pos

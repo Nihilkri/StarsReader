@@ -5,13 +5,14 @@
     <ProjectGuid>b28e8ac1-492c-4483-804b-10757551c2f7</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>StarsReaderMain.py</StartupFile>
+    <StartupFile>Components\Engines.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>StarsReader</Name>
     <RootNamespace>Stars!Reader</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +23,28 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="StarsReaderMain.py" />
+    <Compile Include="Components\Fleet.py" />
+    <Compile Include="Components\Race.py" />
+    <Compile Include="Components\Ship.py" />
+    <Compile Include="Components\Star.py" />
+    <Compile Include="Components\Universe.py" />
+    <Compile Include="Components\Win.py" />
+    <Compile Include="Modules\Battlesim.py" />
+    <Compile Include="Modules\Bombers.py" />
+    <Compile Include="Components\Engines.py" />
+    <Compile Include="Modules\Experiments.py" />
+    <Compile Include="Modules\StarsReaderMain.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Data\AC2.csv" />
+    <Content Include="Data\Bombs.csv" />
+    <Content Include="Data\Engines.csv" />
+    <Content Include="Data\Weapons.csv" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Modules\" />
+    <Folder Include="Data\" />
+    <Folder Include="Components\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
